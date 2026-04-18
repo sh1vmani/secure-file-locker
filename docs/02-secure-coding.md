@@ -1,6 +1,6 @@
 # Secure Coding Practices
 
-This document explains the application-layer controls in `app.py` — why each function was written the way it was, and what attacks each control prevents.
+This document explains the application-layer controls in `app.py`, covering why each function was written the way it was and what attacks each control prevents.
 
 ## The Core Problem: Path Traversal
 
@@ -23,7 +23,7 @@ def is_allowed_file(filename: str) -> bool:
     return ext.lower() in ALLOWED_EXTENSIONS
 ```
 
-This check runs before any path resolution. If a filename does not end in a known-safe extension, the request is rejected immediately. This is intentionally an allowlist (not a denylist) — the set of safe types is small and closed. A denylist approach (blocking `.sh`, `.py`, `.conf`, etc.) fails when attackers use unexpected extensions or double extensions.
+This check runs before any path resolution. If a filename does not end in a known-safe extension, the request is rejected immediately. The design is intentionally an allowlist rather than a denylist; the set of safe types is small and closed. A denylist approach (blocking `.sh`, `.py`, `.conf`, etc.) fails when attackers use unexpected extensions or double extensions.
 
 Calling `os.path.splitext` rather than splitting on `.` handles edge cases like `.htaccess` (no extension returns empty string, which is not in the allowlist) and `file.tar.gz` (only `.gz` is extracted).
 
@@ -40,9 +40,9 @@ def get_safe_path(filename: str) -> str | None:
 
 Three operations are applied in sequence:
 
-1. **`os.path.join`** — anchors the filename to `BASE_DIR`, preventing it from being treated as an absolute path
-2. **`os.path.normpath`** — collapses `..` sequences and redundant separators; `../../etc/passwd` becomes `/etc/passwd`
-3. **`os.path.realpath`** — resolves symlinks to their final physical path
+1. **`os.path.join`**: anchors the filename to `BASE_DIR`, preventing it from being treated as an absolute path
+2. **`os.path.normpath`**: collapses `..` sequences and redundant separators; `../../etc/passwd` becomes `/etc/passwd`
+3. **`os.path.realpath`**: resolves symlinks to their final physical path
 
 The `realpath` call is critical. Without it, an attacker who can create a symlink inside `safe_uploads` pointing to `/etc/` could bypass the `normpath` check. After resolving the real path, the function verifies that the result begins with `BASE_DIR + os.sep`. The trailing `os.sep` prevents a `safe_uploads_backup` directory from matching a `safe_uploads` prefix.
 

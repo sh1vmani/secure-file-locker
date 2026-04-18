@@ -16,16 +16,16 @@ def block_traversal():
         abort(400)
 ```
 
-The `@before_request` decorator registers a function that runs before every route handler. It inspects `request.full_path`, which includes the path and the raw query string — importantly, *before* URL decoding by Flask's routing layer. This is why both literal (`../`) and URL-encoded (`%2e%2e`) forms are included in the pattern.
+The `@before_request` decorator registers a function that runs before every route handler. It inspects `request.full_path`, which includes the path and the raw query string, before URL decoding by Flask's routing layer. This is why both literal (`../`) and URL-encoded (`%2e%2e`) forms are included in the pattern.
 
 `re.IGNORECASE` catches mixed-case encodings (`%2E%2E`, `%2E%2e`, etc.). The pattern covers:
-- `../` — Unix relative traversal
-- `..\` — Windows relative traversal
-- `%2e%2e` — encoded dots (both slashes handled separately)
-- `%2f` — encoded forward slash
-- `%5c` — encoded backslash
+- `../`: Unix relative traversal
+- `..\`: Windows relative traversal
+- `%2e%2e`: encoded dots (both slashes handled separately)
+- `%2f`: encoded forward slash
+- `%5c`: encoded backslash
 
-This middleware does not replace the canonical path check in `get_safe_path` — it adds a separate, earlier rejection point that reduces the attack surface reaching the path resolution logic.
+This middleware does not replace the canonical path check in `get_safe_path`; it adds a separate, earlier rejection point that reduces the attack surface reaching the path resolution logic.
 
 ## Nginx Reverse Proxy
 
@@ -47,13 +47,13 @@ server {
 }
 ```
 
-**`allow 127.0.0.1; deny all;`** — This is an IP-based access control list. Only requests from the loopback interface are forwarded to Flask. Any direct HTTP request from an external IP to port 80 receives a 403 before the request reaches the application. Combined with the firewall rules that prevent port 5000 from being externally accessible, the Flask process is only reachable through Nginx.
+**`allow 127.0.0.1; deny all;`** sets up an IP-based access control list. Only requests from the loopback interface are forwarded to Flask. Any direct HTTP request from an external IP to port 80 receives a 403 before the request reaches the application. Combined with the firewall rules that prevent port 5000 from being externally accessible, the Flask process is only reachable through Nginx.
 
-**Proxy headers** — `X-Real-IP` and `X-Forwarded-For` ensure that the origin IP of the client is passed to Flask even though the connection arrives from `127.0.0.1`. This matters for logging and rate limiting.
+**Proxy headers**: `X-Real-IP` and `X-Forwarded-For` ensure that the origin IP of the client is passed to Flask even though the connection arrives from `127.0.0.1`. This matters for logging and rate limiting.
 
 ## Why Two Layers at the Network Level
 
-The middleware and Nginx controls are not redundant — they cover different threat models:
+The middleware and Nginx controls are not redundant; they cover different threat models:
 
 - **Middleware** operates on the HTTP content: it can inspect request paths and query strings for attack patterns
 - **Nginx IP allowlist** operates on the network layer: it controls who can send requests at all

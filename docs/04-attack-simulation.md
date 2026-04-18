@@ -33,7 +33,7 @@ Requests were issued directly to the Flask process (bypassing Nginx) to isolate 
 
 **Result:** HTTP 400
 
-**Explanation:** The middleware inspects `request.full_path` before URL decoding. The encoded form `%2e%2e` is matched directly by the regex with `re.IGNORECASE`. If the middleware were absent, Flask would decode `%2e%2e` to `..` before passing the value to the route handler — so the middleware must operate on the pre-decode string.
+**Explanation:** The middleware inspects `request.full_path` before URL decoding. The encoded form `%2e%2e` is matched directly by the regex with `re.IGNORECASE`. If the middleware were absent, Flask would decode `%2e%2e` to `..` before passing the value to the route handler, so the middleware must operate on the pre-decode string.
 
 ---
 
@@ -63,13 +63,13 @@ Requests were issued directly to the Flask process (bypassing Nginx) to isolate 
 
 ### TC-05: Symlink Escape Attempt
 
-**Payload:** Symlink `safe_uploads/link` → `/etc/`; `GET /file?name=link/passwd`
+**Payload:** Symlink `safe_uploads/link` -> `/etc/`; `GET /file?name=link/passwd`
 
 **Expected blocking layer:** Application logic (`os.path.realpath` in `get_safe_path`)
 
 **Result:** HTTP 404
 
-**Explanation:** `link/passwd` passes the middleware (no traversal patterns) and passes the extension check (`.passwd`? — actually `passwd` has no extension, which is not in the allowlist, so this also fails `is_allowed_file`). For a more targeted variant: if a symlink `safe_uploads/notes.txt` pointed outside `BASE_DIR`, `get_safe_path` would call `os.path.realpath`, which resolves the symlink to its target path, and the `startswith(BASE_DIR)` check would then fail, returning `None`.
+**Explanation:** `link/passwd` passes the middleware (no traversal patterns). The extension check also blocks it since `passwd` has no extension and is therefore not in the allowlist. For a more targeted variant: if a symlink `safe_uploads/notes.txt` pointed outside `BASE_DIR`, `get_safe_path` would call `os.path.realpath`, which resolves the symlink to its target path, and the `startswith(BASE_DIR)` check would then fail, returning `None`.
 
 ---
 
@@ -77,9 +77,9 @@ Requests were issued directly to the Flask process (bypassing Nginx) to isolate 
 
 | Attack Variant | Middleware | Extension Check | Path Check | OS |
 |---|---|---|---|---|
-| `../../etc/passwd` | BLOCKED (400) | — | — | — |
-| `%2e%2e%2f` traversal | BLOCKED (400) | — | — | — |
-| `.sh` file request | pass | BLOCKED (404) | — | — |
+| `../../etc/passwd` | BLOCKED (400) | n/a | n/a | n/a |
+| `%2e%2e%2f` traversal | BLOCKED (400) | n/a | n/a | n/a |
+| `.sh` file request | pass | BLOCKED (404) | n/a | n/a |
 | Symlink escape | pass | varies | BLOCKED (404) | BLOCKED |
 | Valid `.txt` request | pass | pass | pass | pass |
 

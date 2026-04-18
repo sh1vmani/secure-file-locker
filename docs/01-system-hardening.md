@@ -32,7 +32,7 @@ chown root:filelocker /var/www/safe_uploads
 chmod 750 /var/www/safe_uploads
 ```
 
-Files within the directory are `640` (owner read/write, group read). The `filelocker` user can read files but cannot create, modify, or delete them — a write vulnerability in the app cannot be used to plant malicious files in the served directory.
+Files within the directory are `640` (owner read/write, group read). The `filelocker` user can read files but cannot create, modify, or delete them, so a write vulnerability in the app cannot be used to plant malicious files in the served directory.
 
 ## Firewall Rules
 
@@ -50,4 +50,4 @@ Flask binds to `127.0.0.1:5000` and never listens on an externally accessible in
 
 ## Why Layering at the OS Level Matters
 
-OS-level controls are enforced by the kernel, outside the application's execution context. A bug in Flask, a vulnerable dependency, or a logic error in `app.py` cannot override file system permissions or firewall rules. This is why system hardening is considered Layer 0 — it provides guarantees that higher-level controls can rely on but cannot replicate.
+OS-level controls are enforced by the kernel, outside the application's execution context. A bug in Flask, a vulnerable dependency, or a logic error in `app.py` cannot override file system permissions or firewall rules. System hardening is therefore considered Layer 0: it provides guarantees that higher-level controls can rely on but cannot replicate.
