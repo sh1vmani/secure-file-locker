@@ -4,11 +4,11 @@
 ![Flask](https://img.shields.io/badge/flask-3.1.0-lightgrey)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-> Lab project implementing defense-in-depth remediation for OWASP path traversal (WSTG-ATHZ-01).
+> Lab project implementing defense-in-depth remediation for OWASP path traversal (WSTG-AUTHZ-01).
 
 ## Overview
 
-This repository documents a self-directed lab exploring how path traversal vulnerabilities manifest in web applications and how to eliminate them through layered controls. The application serves files from a constrained upload directory and demonstrates that no single control is sufficient; effective remediation requires coordinated defenses at the OS, application, and network layers.
+This repository documents a self-directed lab exploring how path traversal vulnerabilities manifest in web applications and how to eliminate them through layered controls. The application serves files from a constrained upload directory and demonstrates that no single control is sufficient. Effective remediation requires coordinated defenses at the OS, application, and network layers.
 
 The lab is structured around a minimal Flask application hardened against CWE-22 (Improper Limitation of a Pathname to a Restricted Directory). Each layer is independently capable of blocking known attack variants, producing a resilient system where bypassing one layer still leaves the others intact.
 
@@ -57,7 +57,7 @@ Client Request
 
 The upload directory `/var/www/safe_uploads` is owned by a dedicated service account with no shell access. The Flask process runs as this user; it has read-only access to `safe_uploads` and no access to sensitive system paths. Even if all application-layer controls were bypassed, the OS would deny reads to `/etc/passwd` or `/root/`.
 
-Reference: [CIS Benchmark: Linux File Permissions](https://www.cisecurity.org/cis-benchmarks/)
+Reference: [CIS Benchmark for Linux File Permissions](https://www.cisecurity.org/cis-benchmarks/)
 
 ### Layer 1: Application (Flask)
 
@@ -71,7 +71,7 @@ Reference: [OWASP WSTG-AUTHZ-01](https://owasp.org/www-project-web-security-test
 
 ### Layer 2: Network (Nginx + Middleware)
 
-**Flask `@before_request` middleware**: A compiled regex scans the full request path (including query string) for traversal patterns (`../`, `..\`, `%2e%2e`, `%2f`, `%5c`) before any route handler executes. Matched requests receive HTTP 400 immediately.
+**Flask `@before_request` middleware**: A compiled regex scans the full request path, including the query string, for traversal patterns (`../`, `..\`, `%2e%2e`, `%2f`, `%5c`) before any route handler executes. Matched requests receive HTTP 400 immediately.
 
 **Nginx IP allowlist**: The reverse proxy is configured with `allow 127.0.0.1; deny all;`, meaning only requests originating from localhost reach the Flask process at all. Direct external access to port 5000 is blocked at the network boundary.
 
@@ -122,7 +122,7 @@ All traversal payloads are caught at the middleware layer before reaching path r
 - **`os.path.realpath` is essential for symlink safety.** `normpath` alone does not resolve symlinks and can be bypassed by placing a symlink inside the safe directory.
 - **Regex on raw request paths catches encoded variants** that would otherwise reach the application decoded and bypass string-level checks.
 - **Extension allowlisting beats denylisting.** Maintaining a denylist of dangerous extensions is brittle; an allowlist of known-safe types is closed by default.
-- **Nginx `deny all` as a default posture** means any misconfiguration in upstream services fails closed rather than open.
+- **Nginx `deny all` as a default posture**, which means any misconfiguration in upstream services fails closed rather than open.
 
 ## References
 
